@@ -1,7 +1,7 @@
-//SW Version
+// SW Version
 const version = '1.0';
 
-//Static Cache - App Shell
+// Static Cache - App Shell
 const appAssets = [
     'index.html',
     'main.js',
@@ -12,22 +12,22 @@ const appAssets = [
     'vendor/jquery.min.js'
 ];
 
-//SW Install
-self.addEventListener('install', e=>{
 
+// SW Install
+self.addEventListener( 'install', e => {
     e.waitUntil(
-        caches.open(`static-${version}`)
-        .then(cache => cache.addAll(appAssets))
+        caches.open( `static-${version}` )
+            .then( cache => cache.addAll(appAssets) )
     );
 });
 
-//SW Activate
-self.addEventListener('activate', e =>{
+// SW Activate
+self.addEventListener( 'activate', e => {
 
-    //Clean static cache
-    let cleaned = caches.keys().then(keys =>{
+    // Clean static cache
+    let cleaned = caches.keys().then( keys => {
         keys.forEach( key => {
-            if( key !== `static-${version}` && key.match('static-')){
+            if ( key !== `static-${version}` && key.match('static-') ) {
                 return caches.delete(key);
             }
         });
@@ -36,86 +36,87 @@ self.addEventListener('activate', e =>{
 });
 
 
-//Static cache strategy - Cache with Network Fallback
-const staticCache = (req, cacheName = `static-${version}`) =>{
-    return caches.match(req).then(cacheRes =>{
+// Static cache startegy - Cache with Network Fallback
+const staticCache = ( req, cacheName = `static-${version}` ) => {
 
-        //Return cached response if found
-        if(cacheRes) return cacheRes;
+    return caches.match(req).then( cachedRes => {
 
-        //Fallback to network
-        return fetch(req).then(networkRes =>{
+        // Return cached response if found
+        if(cachedRes) return cachedRes;
 
-            //Update cache with new response
+        // Fall back to network
+        return fetch(req).then ( networkRes => {
+
+            // Update cache with new response
             caches.open(cacheName)
-                .then(cache => cache.put(req, networkRes));
+                .then( cache => cache.put( req, networkRes ));
 
-            //Return Clone of Network Response
+            // Return Clone of Network Response
             return networkRes.clone();
-
         });
     });
 };
- 
-//Network with Cache Fallback
-const fallbackCache = (req) =>{
 
-    //Try network
-    return fetch(req).then(networkRes =>{
+// Network with Cache Fallback
+const fallbackCache = (req) => {
 
-        //Check res is OK, else go to cache
-        if(!networkRes.ok) throw 'Fetch Error';
+    // Try Network
+    return fetch(req).then( networkRes => {
 
-        //Update Cache
-        caches.open(`static-${version}`)
-            .then(cache => cache.put(req, networkRes));
+        // Check res is OK, else go to cache
+        if( !networkRes.ok ) throw 'Fetch Error';
 
-        //Return Clone of Network Response
+        // Update cache
+        caches.open( `static-${version}` )
+            .then( cache => cache.put( req, networkRes ) );
+
+        // Return Clone of Network Response
         return networkRes.clone();
     })
     
-    //Try Cache
-    .catch(err => caches.match(req));
+    // Try cache
+    .catch( err => caches.match(req) );
 };
 
-//Clean old giphys from the 'giphy cache
-const cleanGiphyCache = (giphys) =>{
-    caches.open('giphy').then(cache => {
 
-        //Get all cache entries
-        cache.keys().then(keys => {
+// Clean old Giphys from the 'giphy' cache
+const cleanGiphyCache = (giphys) => {
 
-            //Loop entries (requests)
-            keys.forEach(key =>{
+    caches.open('giphy').then( cache => {
 
-                //IF entry is not part of current Giphys, Delete
-                if(!giphys.includes(key.url)) cache.delete(key);
+        // Get all cache entries
+        cache.keys().then( keys => {
+
+            // Loop entries (requests)
+            keys.forEach( key => {
+
+                // If entry is NOT part of current Giphys, Delete
+                if( !giphys.includes(key.url) ) cache.delete(key);
             });
         });
     });
-}
+};
 
-//SW Fetch
-self.addEventListener('fetch', e =>{
+// SW Fetch
+self.addEventListener('fetch', e => {
 
-    //AppShell
-    if(e.request.url.match(location.origin)){
-        e.respondWith(staticCache(e.request));
+    // App shell
+    if( e.request.url.match(location.origin) ) {
+        e.respondWith( staticCache(e.request) );
     
-    //Giphy API
-    }else if (e.request.url.match('api.giphy.com/v1/gifs/trending')){
-        e.respondWith(fallbackCache(e.request));
-
-    //Giphy Media
-    }else if(e.request.url.match('giphy.com/media')){
-        e.respondWith(staticCache(e.request, 'giphy'));
+    // Giphy API
+    } else if ( e.request.url.match('api.giphy.com/v1/gifs/trending') ) {
+        e.respondWith( fallbackCache(e.request) );
+    
+    // Giphy Media
+    } else if ( e.request.url.match('giphy.com/media') ) {
+        e.respondWith( staticCache(e.request, 'giphy') );
     }
 });
 
+// Listen for message from client
+self.addEventListener('message', e => {
 
-//Listen for message for the client
-self.addEventListener('message', e=> {
-
-    //Identify the message
-    if(e.data.action === 'cleanGiphyCache') cleanGiphyCache(e.data.giphys);
-})
+    // Identify the message
+    if( e.data.action === 'cleanGiphyCache' ) cleanGiphyCache(e.data.giphys);
+});

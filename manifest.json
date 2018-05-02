@@ -1,7 +1,7 @@
 {
   "name": "Giphygram",
   "short_name": "Giphygram",
-  "theme_color": "#359bed",
+  "theme_color": "#0082f9",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",

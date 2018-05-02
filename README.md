@@ -1,5 +1,5 @@
-#Giphygram
+# Giphygram
 
-------
+---
 
-Prueba de una Página Web Progresiva 
+Progressive Web App for displaying the latest trending Gifs from Giphy.com
